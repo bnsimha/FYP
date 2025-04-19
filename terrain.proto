@@ -1,0 +1,78 @@
+syntax = "proto3";
+package terrain;
+
+option go_package = "./pb";
+
+// TerrainService provides methods to generate and retrieve terrain data
+service TerrainService {
+  // GetTerrainTile returns terrain data for a specific tile
+  rpc GetTerrainTile(TerrainTileRequest) returns (TerrainTileResponse);
+  
+  // GetTerrainChunk returns multiple terrain tiles as a chunk
+  rpc GetTerrainChunk(TerrainChunkRequest) returns (TerrainChunkResponse);
+  
+  // UpdateTerrainParameters updates generation parameters
+  rpc UpdateTerrainParameters(TerrainParametersRequest) returns (TerrainParametersResponse);
+  
+  // StreamTerrainUpdates provides a stream of terrain updates
+  rpc StreamTerrainUpdates(TerrainStreamRequest) returns (stream TerrainTileResponse);
+}
+
+// TerrainTileRequest contains parameters for requesting a specific terrain tile
+message TerrainTileRequest {
+  int32 x = 1;
+  int32 z = 2;
+  int32 resolution = 3; // Points per side
+  int32 lod = 4; // Level of detail
+}
+
+// TerrainTileResponse contains the heightmap data for a terrain tile
+message TerrainTileResponse {
+  int32 x = 1;
+  int32 z = 2;
+  int32 resolution = 3;
+  bytes heightmap = 4; // Raw heightmap data as binary
+  bool is_cached = 5; // Whether this tile was served from cache
+  string worker_id = 6; // ID of worker that generated this tile
+}
+
+// TerrainChunkRequest requests multiple tiles at once
+message TerrainChunkRequest {
+  int32 center_x = 1;
+  int32 center_z = 2;
+  int32 radius = 3; // Number of tiles in each direction
+  int32 resolution = 4;
+  int32 lod = 5;
+}
+
+// TerrainChunkResponse contains multiple terrain tiles
+message TerrainChunkResponse {
+  repeated TerrainTileResponse tiles = 1;
+  int32 total_tiles = 2;
+  int32 generated_tiles = 3;
+  int32 cached_tiles = 4;
+}
+
+// TerrainParametersRequest contains parameters for the noise generation
+message TerrainParametersRequest {
+  float scale = 1;
+  float amplitude = 2;
+  int32 octaves = 3;
+  float persistence = 4;
+  float lacunarity = 5;
+  int32 seed = 6;
+}
+
+// TerrainParametersResponse confirms parameter updates
+message TerrainParametersResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// TerrainStreamRequest defines parameters for streaming terrain updates
+message TerrainStreamRequest {
+  int32 center_x = 1;
+  int32 center_z = 2;
+  int32 view_distance = 3;
+  bool high_priority = 4;
+}
