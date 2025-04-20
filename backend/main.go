@@ -18,9 +18,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"github.com/bnsimha/FYP/pb"
+) 
 
-	pb "terrain-generator/pb"
-)
 
 // TerrainService implements the gRPC service
 type TerrainService struct {
