@@ -1,7 +1,7 @@
 syntax = "proto3";
 package terrain;
 
-option go_package = "./pb";
+option go_package = "github.com/bnsimha/FYP/backend/pb";
 
 // TerrainService provides methods to generate and retrieve terrain data
 service TerrainService {

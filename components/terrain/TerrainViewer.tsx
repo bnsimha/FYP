@@ -2,10 +2,13 @@
 
 import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import TerrainControls from "@/components/terrain/TerrainControls";
 import { useTerrainStore } from "@/lib/stores/terrainStore";
 import { TerrainClient } from "@/lib/grpc/terrainClient";
+import { TerrainServiceClient } from "@/generated/TerrainServiceClientPb";
+import { TerrainTileRequest, TerrainTileResponse } from "@/generated/terrain_pb";
+import { grpc } from "@improbable-eng/grpc-web";
 
 export default function TerrainViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -75,11 +78,19 @@ export default function TerrainViewer() {
         const existingMesh = scene.getObjectByName("terrainMesh");
         if (existingMesh) {
           scene.remove(existingMesh);
-          existingMesh.geometry.dispose();
-          existingMesh.material.dispose();
+          if (existingMesh instanceof THREE.Mesh) {
+            existingMesh.geometry.dispose();
+          }
+          if (existingMesh instanceof THREE.Mesh && existingMesh.material) {
+            if (Array.isArray(existingMesh.material)) {
+              existingMesh.material.forEach((mat) => mat.dispose());
+            } else {
+              existingMesh.material.dispose();
+            }
+          }
         }
         
-        // Request terrain data from the gRPC service
+        //Request terrain data from the gRPC service
         const terrainClient = new TerrainClient();
         const tileData = await terrainClient.getTerrainTile({
           x: 0,
@@ -87,7 +98,44 @@ export default function TerrainViewer() {
           resolution: terrainParams.resolution,
           lod: terrainParams.lod
         });
-        
+//         let tileData:any;
+//         const client = new TerrainServiceClient('http://localhost:8080', null, {
+//             transport: grpc.CrossBrowserHttpTransport({ withCredentials: false }),
+//           });
+//             try {
+//               console.log('GetTerrainTile button clicked');
+//               const request = new TerrainTileRequest();
+//               request.setX(0);
+//               request.setZ(0);
+//               request.setResolution(64);
+//               request.setLod(1);
+           
+              
+//             client.getTerrainTile(request, {}, (err: Error | null, response: TerrainTileResponse | null) => {
+//               if (err) {
+//                 console.error('Error:', err.message);
+//               } else if (response) {
+//                 const responseObject = response;
+//                 console.log('Heightmap Uint8Array:', responseObject.getHeightmap());
+// console.log('ByteOffset:', (responseObject.getHeightmap() as Uint8Array).byteOffset);
+// const originalHeightmap = response.getHeightmap_asU8(); // Always get as Uint8Array
+//     const alignedHeightmap = new Float32Array(
+//       originalHeightmap.buffer,
+//       originalHeightmap.byteOffset,
+//       originalHeightmap.byteLength / Float32Array.BYTES_PER_ELEMENT
+//     );
+
+//     tileData = {
+//       heightmap: alignedHeightmap,
+//     };
+
+//     console.log('Decoded Heightmap:', tileData.heightmap);
+//               }
+//             });
+//             } catch (error) {
+//               console.error("Error in getTerrainTile:", error);
+//             }
+          
         // Create a new terrain mesh from the received data
         if (tileData && tileData.heightmap) {
           const terrainGeometry = new THREE.PlaneGeometry(
@@ -97,20 +145,20 @@ export default function TerrainViewer() {
             terrainParams.resolution - 1
           );
           terrainGeometry.rotateX(-Math.PI / 2);
-          
+        
           // Apply heightmap data to the geometry vertices
           const positions = terrainGeometry.attributes.position.array;
-          const heights = new Float32Array(tileData.heightmap);
-          
+          const heights = tileData.heightmap;
+        
           for (let i = 0; i < heights.length; i++) {
             // Update Y coordinate (height) for each vertex
             positions[i * 3 + 1] = heights[i] * terrainParams.amplitude;
           }
-          
+        
           // Update geometry
           terrainGeometry.attributes.position.needsUpdate = true;
           terrainGeometry.computeVertexNormals();
-          
+        
           // Create material with proper shading
           const terrainMaterial = new THREE.MeshStandardMaterial({
             color: 0x3b9f86,
@@ -120,16 +168,16 @@ export default function TerrainViewer() {
             metalness: 0.2,
             roughness: 0.8,
           });
-          
+        
           // Create mesh
           const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
           terrainMesh.name = "terrainMesh";
           terrainMesh.receiveShadow = true;
           terrainMesh.castShadow = true;
-          
+        
           // Add to scene
           scene.add(terrainMesh);
-          
+        
           // Update global terrain mesh reference
           updateTerrainMesh(terrainMesh);
         }
@@ -146,14 +194,12 @@ export default function TerrainViewer() {
     generateTerrainMesh();
     
     // Watch for parameter changes
-    const unsubscribe = useTerrainStore.subscribe(
-      (state) => state.parameters,
-      (newParams, oldParams) => {
-        if (JSON.stringify(newParams) !== JSON.stringify(oldParams)) {
-          generateTerrainMesh();
-        }
+    const unsubscribe = useTerrainStore.subscribe((state) => {
+      const newParams = state.parameters;
+      if (JSON.stringify(newParams) !== JSON.stringify(terrainParams)) {
+        generateTerrainMesh();
       }
-    );
+    });
     
     // Animation loop
     const animate = () => {

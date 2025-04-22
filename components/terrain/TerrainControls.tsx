@@ -138,6 +138,20 @@ export default function TerrainControls({ onToggle }: TerrainControlsProps) {
             onValueChange={(values) => updateParameters({ resolution: values[0] })}
           />
         </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="seed">Seed ({parameters.seed})</Label>
+          </div>
+          <Slider
+            id="seed"
+            min={10000}
+            max={20000}
+            step={400}
+            value={[parameters.seed]}
+            onValueChange={(values) => updateParameters({ seed: values[0] })}
+          />
+        </div>
         
         <div className="flex items-center justify-between">
           <Label htmlFor="wireframe">Wireframe</Label>

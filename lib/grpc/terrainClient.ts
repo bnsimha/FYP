@@ -70,7 +70,7 @@ export interface TerrainTileResponse {
 export class TerrainClient {
   async getTerrainTile(request: TerrainTileRequest): Promise<TerrainTileResponse> {
     // Simulate a network request
-    await delay(500);
+    await delay(200);
     
     // Get the current parameters from local storage or use defaults
     const paramsString = localStorage.getItem('terrainParameters');
@@ -85,7 +85,8 @@ export class TerrainClient {
         octaves: 4,
         persistence: 0.5,
         lacunarity: 2.0,
-        seed: Math.floor(Math.random() * 10000),
+        seed: 118800,
+        // seed: Math.floor(Math.random() * 10000),
         resolution: 64,
         lod: 1,
         wireframe: false,
@@ -125,7 +126,8 @@ export class TerrainClient {
         octaves: 4,
         persistence: 0.5,
         lacunarity: 2.0,
-        seed: Math.floor(Math.random() * 10000),
+        seed:118800,
+        // Math.floor(Math.random() * 10000),
         resolution: 64,
         lod: 1,
         wireframe: false,

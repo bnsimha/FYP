@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"github.com/bnsimha/FYP/pb"
+	"github.com/ojrac/opensimplex-go"
 ) 
 
 
@@ -76,11 +77,11 @@ type WorkResult struct {
 func NewTerrainService(numWorkers int) *TerrainService {
 	s := &TerrainService{
 		parameters: TerrainParameters{
-			Scale:       0.01,
-			Amplitude:   1.5,
-			Octaves:     4,
+			Scale:       0.08,
+			Amplitude:   7.5,
+			Octaves:     5,
 			Persistence: 0.5,
-			Lacunarity:  2.0,
+			Lacunarity:  4.0,
 			Seed:        rand.Int31(),
 		},
 		terrainCache:  make(map[string][]byte),
@@ -364,66 +365,49 @@ func (s *TerrainService) generateTerrainTile(worker *Worker, x, z, resolution, l
 	params := worker.params
 	worker.mu.Unlock()
 
-	// Simulate computation time
-	time.Sleep(200 * time.Millisecond)
+	  // Create OpenSimplex noise generator
+	  noise := opensimplex.New(int64(params.Seed))
 
-	// Create heightmap buffer
-	heightmap := make([]float32, resolution*resolution)
-	
-	// Simple Perlin noise (simulated)
-	for i := int32(0); i < resolution; i++ {
-		for j := int32(0); j < resolution; j++ {
-			// Scale coordinates based on tile position
-			nx := float64(x) + float64(i)/float64(resolution)
-			nz := float64(z) + float64(j)/float64(resolution)
-			
-			// Apply scaling
-			nx *= float64(params.Scale)
-			nz *= float64(params.Scale)
-			
-			// Apply seed
-			nx += float64(params.Seed) * 0.1
-			nz += float64(params.Seed) * 0.1
-			
-			// Simple noise function (this would be a real Perlin noise implementation)
-			var value float64
-			amplitude := 1.0
-			frequency := 1.0
-			
-			for o := int32(0); o < params.Octaves; o++ {
-				// Simple sinusoidal noise for demonstration
-				// In production, this would use a proper Perlin noise function
-				noiseValue := math.Sin(nx*frequency*5) * math.Cos(nz*frequency*5)
-				
-				value += noiseValue * amplitude
-				
-				amplitude *= float64(params.Persistence)
-				frequency *= float64(params.Lacunarity)
-			}
-			
-			// Normalize to 0-1 range
-			value = (value + 1) / 2
-			
-			// Apply amplitude
-			value *= float64(params.Amplitude)
-			
-			// Store in heightmap
-			heightmap[i*resolution+j] = float32(value)
-		}
-	}
-	
-	// Convert to bytes
-	byteData := make([]byte, len(heightmap)*4)
-	for i, h := range heightmap {
-		binary.LittleEndian.PutUint32(byteData[i*4:], math.Float32bits(h))
-	}
-	
-	return byteData, nil
-}
+	  // Create heightmap buffer
+	  heightmap := make([]float32, resolution*resolution)
+  
+	  // Generate terrain using OpenSimplex noise
+	  for i := int32(0); i < resolution; i++ {
+		  for j := int32(0); j < resolution; j++ {
+			  // Scale coordinates based on tile position
+			  nx := float64(x) + float64(i)/float64(resolution)
+			  nz := float64(z) + float64(j)/float64(resolution)
+  
+			  // Apply scaling
+			  nx *= float64(params.Scale)
+			  nz *= float64(params.Scale)
+  
+			  // Generate noise value
+			  value := noise.Eval2(nx, nz)
+  
+			  // Normalize to 0-1 range
+			  value = (value + 1) / 2
+  
+			  // Apply amplitude
+			  value *= float64(params.Amplitude)
+  
+			  // Store in heightmap
+			  heightmap[i*resolution+j] = float32(value)
+		  }
+	  }
+  
+	  // Convert to bytes
+	  byteData := make([]byte, len(heightmap)*4)
+	  for i, h := range heightmap {
+		  binary.LittleEndian.PutUint32(byteData[i*4:], math.Float32bits(h))
+	  }
+	  log.Printf("Heightmap byte data: %v", byteData)
+	  return byteData, nil
+  }
 
 func main() {
 	// Create service with 4 workers
-	service := NewTerrainService(4)
+	service := NewTerrainService(6)
 	
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
@@ -431,7 +415,7 @@ func main() {
 	
 	// Create gRPC-Web wrapper
 	wrappedServer := grpcweb.WrapServer(grpcServer,
-		grpcweb.WithOriginFunc(func(origin string) bool { return true }))
+		grpcweb.WithOriginFunc(func(origin string) bool { return true })) // in the func (origin string); origin is essentially the url of the sites that has permission to access the service
 	
 	// Create HTTP server
 	httpServer := &http.Server{
@@ -440,7 +424,7 @@ func main() {
 			// Add CORS headers
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Allow-Headers", "*") // For development purpose only
 			
 			// Handle preflight requests
 			if r.Method == "OPTIONS" {
@@ -488,7 +472,7 @@ func main() {
 	// Graceful shutdown
 	log.Println("Shutting down server...")
 	
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	defer cancel()
 	
 	if err := httpServer.Shutdown(ctx); err != nil {

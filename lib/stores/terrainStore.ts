@@ -32,7 +32,7 @@ const defaultParameters: TerrainParameters = {
   octaves: 4,
   persistence: 0.5,
   lacunarity: 2.0,
-  seed: Math.floor(Math.random() * 10000),
+  seed: 118800,
   resolution: 64,
   lod: 1,
   wireframe: false,
