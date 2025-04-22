@@ -78,11 +78,11 @@ func NewTerrainService(numWorkers int) *TerrainService {
 	s := &TerrainService{
 		parameters: TerrainParameters{
 			Scale:       0.08,
-			Amplitude:   7.5,
+			Amplitude:   1.5,
 			Octaves:     5,
-			Persistence: 0.5,
+			Persistence: 0.2,
 			Lacunarity:  4.0,
-			Seed:        rand.Int31(),
+			Seed:        rand.Int31()*11229,
 		},
 		terrainCache:  make(map[string][]byte),
 		workQueue:     make(chan WorkRequest, 100),
@@ -365,43 +365,60 @@ func (s *TerrainService) generateTerrainTile(worker *Worker, x, z, resolution, l
 	params := worker.params
 	worker.mu.Unlock()
 
-	  // Create OpenSimplex noise generator
-	  noise := opensimplex.New(int64(params.Seed))
+	  //Create OpenSimplex noise generator
+	//   noise := opensimplex.New(int64(params.Seed))
 
 	  // Create heightmap buffer
-	  heightmap := make([]float32, resolution*resolution)
+	  heightmap := make([]float32, (resolution+1)*(resolution+1))
   
-	  // Generate terrain using OpenSimplex noise
-	  for i := int32(0); i < resolution; i++ {
-		  for j := int32(0); j < resolution; j++ {
-			  // Scale coordinates based on tile position
-			  nx := float64(x) + float64(i)/float64(resolution)
-			  nz := float64(z) + float64(j)/float64(resolution)
+	//   // Generate terrain using OpenSimplex noise
+	//   for i := int32(0); i <= resolution; i++ {
+	// 	  for j := int32(0); j <= resolution; j++ {
+	// 		  // Scale coordinates based on tile position
+	// 		  nx := float64(x) + float64(i)/float64(resolution)
+	// 		  nz := float64(z) + float64(j)/float64(resolution)
   
-			  // Apply scaling
-			  nx *= float64(params.Scale)
-			  nz *= float64(params.Scale)
+	// 		  // Apply scaling
+	// 		  nx *= float64(params.Scale)
+	// 		  nz *= float64(params.Scale)
   
-			  // Generate noise value
-			  value := noise.Eval2(nx, nz)
+	// 		  // Generate noise value
+	// 		  value := noise.Eval2(nx, nz)
   
-			  // Normalize to 0-1 range
-			  value = (value + 1) / 2
+	// 		  // Normalize to 0-1 range
+	// 		//    value = (value + 1) / 2
   
-			  // Apply amplitude
-			  value *= float64(params.Amplitude)
+	// 		  // Apply amplitude
+	// 		  value *= float64(params.Amplitude)
   
-			  // Store in heightmap
-			  heightmap[i*resolution+j] = float32(value)
-		  }
-	  }
+	// 		  // Store in heightmap
+	// 		  heightmap[i*(resolution+1)+j] = float32(value)
+	// 	  }
+	//   }
+	noise := opensimplex.New(int64(params.Seed))
+    //heightmap := make([]float32, resolution*resolution)
+
+    for i := int32(0); i <= resolution; i++ {
+        for j := int32(0); j <=resolution; j++ {
+            nx := float64(x) + float64(i)/float64(resolution)
+            nz := float64(z) + float64(j)/float64(resolution)
+
+            // Combine multiple layers of noise
+            elevation := float32(noise.Eval2(nx, nz)) * 0.5
+            elevation += float32(noise.Eval2(nx*2, nz*2)) * 0.25
+            elevation += float32(noise.Eval2(nx*4, nz*4)) * 0.125
+
+            heightmap[i*(resolution+1)+j] = elevation
+        }
+    }
   
 	  // Convert to bytes
 	  byteData := make([]byte, len(heightmap)*4)
 	  for i, h := range heightmap {
 		  binary.LittleEndian.PutUint32(byteData[i*4:], math.Float32bits(h))
 	  }
-	  log.Printf("Heightmap byte data: %v", byteData)
+	  log.Printf("Heightmap size: %d", len(heightmap))
+	//   log.Printf("Heightmap byte data: %v", byteData)
 	  return byteData, nil
   }
 

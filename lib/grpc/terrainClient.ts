@@ -95,7 +95,7 @@ export class TerrainClient {
     }
     
     // Generate heightmap
-    const heightmap = generateSimpleNoise(request.resolution, request.resolution, params);
+    const heightmap = generateSimpleNoise(request.resolution+1, request.resolution+1, params);
     
     // Return response
     return {
