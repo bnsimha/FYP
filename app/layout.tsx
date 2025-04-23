@@ -25,8 +25,9 @@ export default function RootLayout({
           enableSystem
         >
           <Navigation />
-          {children}
+        {children}
         </ThemeProvider>
+          
       </body>
     </html>
   );
