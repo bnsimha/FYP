@@ -27,7 +27,7 @@ interface TerrainState {
 
 // Default terrain parameters
 const defaultParameters: TerrainParameters = {
-  scale: 0.01,
+  scale: 0.08,
   amplitude: 1.5,
   octaves: 4,
   persistence: 0.5,

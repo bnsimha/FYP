@@ -360,15 +360,15 @@ const GameScene: React.FC = () => {
       // Apply heightmap data to the geometry vertices
       const positions = terrainGeometry.attributes.position.array;
       for (let i = 0; i < heightmap.length; i++) {
-        positions[i * 3 + 1] = heightmap[i] *Math.random();
+        positions[i * 3 + 1] = heightmap[i] ;
       }
   
       terrainGeometry.attributes.position.needsUpdate = true;
       terrainGeometry.computeVertexNormals();
   
       const terrainMaterial = new THREE.MeshStandardMaterial({
-        map: texture,
-        // color: 0x3b9f86,
+       // map: texture,
+         color: 0x3b9f86,
         wireframe: false,
         flatShading: true,
       });
