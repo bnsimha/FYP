@@ -110,36 +110,36 @@ useControls('Terrain Parameters',()=>({
     },
   }));
 
-  useControls('Additinal MathFuncs', ()=>({
+//   useControls('Additinal MathFuncs', ()=>({
 
-    Normal: {
-        value: false, // Checkbox starts unchecked
-        onChange: (value) => {
-          if (value) {
-            setmathIdx(0); // Set state to 0 when checked
-            console.log('Normal selected');
-          }
-        },
-      },
-      Random: {
-        value: false, // Checkbox starts unchecked
-        onChange: (value) => {
-          if (value) {
-            setmathIdx(1); // Set state to 1 when checked
-            console.log('Random selected');
-          }
-        },
-      },
-      Sin: {
-        value: false, // Checkbox starts unchecked
-        onChange: (value) => {
-          if (value) {
-            setmathIdx(2); // Set state to 2 when checked
-            console.log('Sin selected');
-          }
-        },
-      },
-  }));
+//     Normal: {
+//         value: false, // Checkbox starts unchecked
+//         onChange: (value) => {
+//           if (value) {
+//             setmathIdx(0); // Set state to 0 when checked
+//             console.log('Normal selected');
+//           }
+//         },
+//       },
+//       Random: {
+//         value: false, // Checkbox starts unchecked
+//         onChange: (value) => {
+//           if (value) {
+//             setmathIdx(1); // Set state to 1 when checked
+//             console.log('Random selected');
+//           }
+//         },
+//       },
+//       Sin: {
+//         value: false, // Checkbox starts unchecked
+//         onChange: (value) => {
+//           if (value) {
+//             setmathIdx(2); // Set state to 2 when checked
+//             console.log('Sin selected');
+//           }
+//         },
+//       },
+//   }));
 
   useEffect(() => {
     updateParams();
