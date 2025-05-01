@@ -143,11 +143,12 @@ useControls('Terrain Parameters',()=>({
 
   useEffect(() => {
     updateParams();
-    getTerrainTile(0,0,64,1)
+    getTerrainTile(0,0,128,1)
   }, [terrainParams]);
 
 
       const getTerrainTile = async (x:number,z:number,resolution:number, lod:number)=>{
+        const startTime = performance.now();
         const request = new TerrainTileRequest();
         request.setX(x);
         request.setZ(z);
@@ -155,6 +156,14 @@ useControls('Terrain Parameters',()=>({
         request.setLod(lod);
         try{
             const responseTile = await client.getTerrainTile(request);
+            const endTime = performance.now(); // Record the end time
+    console.log(`getTerrainTile execution time: ${(endTime - startTime).toFixed(2)} ms`);
+
+     // Serialize the entire response to calculate the payload size
+     const serializedResponse = responseTile.serializeBinary(); // Serialize the response to binary format
+     const payloadSize = serializedResponse.byteLength; // Get the size in bytes
+     console.log(`Payload size (entire response): ${payloadSize} bytes`);
+
             const originalHeightmap = responseTile.getHeightmap_asU8(); // Always get as Uint8Array
             let alignedHeightmap: Float32Array;
     
@@ -185,8 +194,10 @@ useControls('Terrain Parameters',()=>({
         }
       }        
           const addTileToScene = (x: number, z: number, heightmap: Float32Array) => {
-            const tileSize = 10; 
-            const resolution = 64;
+            const renderStartTime = performance.now(); // Record the start time for rendering
+
+            const tileSize = 5; 
+            const resolution = 128;
         
             const existingTile = scene.getObjectByName(`tile_${x}_${z}`);
             if (existingTile) {
@@ -225,28 +236,61 @@ useControls('Terrain Parameters',()=>({
             terrainMesh.name = `tile_${x}_${z}`;
         
             scene.add(terrainMesh);
+            const renderEndTime = performance.now(); // Record the end time for rendering
+            console.log(`Tile rendering time: ${(renderEndTime - renderStartTime).toFixed(2)} ms`);
           };
 
-          const updateParams=async()=>{
-            const requestParams=new TerrainParametersRequest();
-requestParams.setScale(terrainParams.Scale)
-requestParams.setAmplitude(terrainParams?.Amplitude)
-requestParams.setOctaves(terrainParams.Octaves)
-requestParams.setPersistence(terrainParams.Persistence)
-requestParams.setLacunarity(terrainParams.Lacunarity)
-// requestParams.setSeed(terrainParams.Seed)
-
-
-            const newParams = await client.updateTerrainParameters(requestParams);
-            if(newParams.getSuccess()){
-                console.log(requestParams)
-                console.log('Terrain parameters updated successfully');
-              // await getTerrainTile(0, 0, 64, 1);
-            } else {
-
+          const updateParams = async () => {
+            const startTime = performance.now(); // Record the start time
+          
+            const requestParams = new TerrainParametersRequest();
+            requestParams.setScale(terrainParams.Scale);
+            requestParams.setAmplitude(terrainParams.Amplitude);
+            requestParams.setOctaves(terrainParams.Octaves);
+            requestParams.setPersistence(terrainParams.Persistence);
+            requestParams.setLacunarity(terrainParams.Lacunarity);
+            // requestParams.setSeed(terrainParams.Seed);
+          
+            try {
+              const newParams = await client.updateTerrainParameters(requestParams);
+              if (newParams.getSuccess()) {
+                //console.log(requestParams);
+                //console.log('Terrain parameters updated successfully');
+              } else {
                 console.error('Failed to update terrain parameters');
+              }
+            } catch (error) {
+              console.error('Error updating terrain parameters:', error);
             }
-          }
+          
+            const endTime = performance.now(); // Record the end time
+            console.log(`updateParams execution time: ${(endTime - startTime).toFixed(2)} ms`);
+          };
+
+
+
+
+//           const updateParams=async()=>{
+//             const startTime = performance.now(); // Record the start time
+//             const requestParams=new TerrainParametersRequest();
+// requestParams.setScale(terrainParams.Scale)
+// requestParams.setAmplitude(terrainParams?.Amplitude)
+// requestParams.setOctaves(terrainParams.Octaves)
+// requestParams.setPersistence(terrainParams.Persistence)
+// requestParams.setLacunarity(terrainParams.Lacunarity)
+// // requestParams.setSeed(terrainParams.Seed)
+
+
+//             const newParams = await client.updateTerrainParameters(requestParams);
+//             if(newParams.getSuccess()){
+//                 console.log(requestParams)
+//                 console.log('Terrain parameters updated successfully');
+//               // await getTerrainTile(0, 0, 64, 1);
+//             } else {
+
+//                 console.error('Failed to update terrain parameters');
+//             }
+//           }
 
 //           useFrame(() => {
 

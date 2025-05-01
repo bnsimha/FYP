@@ -282,7 +282,7 @@ func (s *TerrainService) StreamTerrainUpdates(req *pb.TerrainStreamRequest, stre
 		tileReq := &pb.TerrainTileRequest{
 			X:          coord[0],
 			Z:          coord[1],
-			Resolution: 64, // Default resolution
+			Resolution: 128, // Default resolution
 			Lod:        1,  // Default LOD
 		}
 

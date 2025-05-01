@@ -15,7 +15,7 @@ const LogGRPC = () => {
 
   const GetTerrainTile = async () => {
     try {
-      console.log('GetTerrainTile button clicked');
+     const startTime = performance.now(); 
       const request = new TerrainTileRequest();
       request.setX(0);
       request.setZ(0);
@@ -37,19 +37,27 @@ const LogGRPC = () => {
 
   const GetTerrainChunk = async () => {
     try {
-      console.log('GetTerrainChunk button clicked');
+      const startTime = performance.now(); 
+      //console.log('GetTerrainChunk button clicked');
         const chunkRequest = new TerrainChunkRequest();
-        chunkRequest.setCenterX(10);
-        chunkRequest.setCenterZ(10);
-        chunkRequest.setRadius(2);
-        chunkRequest.setResolution(64);
+        chunkRequest.setCenterX(-8650);
+        chunkRequest.setCenterZ(-8650);
+        chunkRequest.setRadius(3);
+        chunkRequest.setResolution(128);
         chunkRequest.setLod(1);
         
         client.getTerrainChunk(chunkRequest, {}, (err: Error | null, response: TerrainChunkResponse | null) => {
+          const endTime = performance.now(); // Record the end time
+          console.log(`GetTerrainChunk execution time: ${(endTime - startTime)} ms`);
           if (err) {
             console.error('Error:', err.message);
           } else if (response) {
-            console.log('Tiles:', response.toObject()); // Added toObject() to convert response
+                    // Log the payload size
+        const serializedResponse = response.serializeBinary(); // Serialize the response to binary format
+        const payloadSize = serializedResponse.byteLength; // Get the size in bytes
+        console.log(`Payload size (GetTerrainChunk): ${payloadSize} bytes`);
+
+           // console.log('Tiles:', response.toObject()); // Added toObject() to convert response
           }
         });
     } catch (error) {
@@ -60,11 +68,12 @@ const LogGRPC = () => {
 
   const StreamTerrainUpdates = async () => {
     try {
+      const startTime = performance.now(); 
       console.log('StreamTerrainUpdates button clicked');
         const streamRequest = new TerrainStreamRequest();
-        streamRequest.setCenterX(10);
-        streamRequest.setCenterZ(10);
-        streamRequest.setViewDistance(2);
+        streamRequest.setCenterX(1000);
+        streamRequest.setCenterZ(1000);
+        streamRequest.setViewDistance(3);
         streamRequest.setHighPriority(true);
         
         const stream = client.streamTerrainUpdates(streamRequest);
@@ -75,6 +84,8 @@ const LogGRPC = () => {
           console.error('Stream error:', err.message);
         });
         stream.on('end', () => {
+          const endTime = performance.now();
+          console.log(`Stream ended. Total time: ${(endTime - startTime).toFixed(2)} ms`);
           console.log('Stream ended');
         });
     } catch (error) {
